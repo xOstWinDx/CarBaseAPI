@@ -34,14 +34,11 @@ async def get_car_by_id(
         _=Depends(authorization_user)
 ):
     car_service = CarService(CarPostgresRepository(session))
-    try:
-        res = await car_service.get_by_id(car_id)
-        if not res:
-            raise NotFoundExc("Car not found")
-        return res
-    except Exception:
-        await session.rollback()
-        raise
+    res = await car_service.get_by_id(car_id)
+    if not res:
+        raise NotFoundExc("Car not found")
+    return res
+
 
 
 @router.get("/", response_model=list[CarGetSchema], description="Get all cars")
@@ -53,16 +50,12 @@ async def get_all_cars(
         _=Depends(authorization_user)
 ):
     car_service = CarService(CarPostgresRepository(session))
-    try:
-        res = await car_service.get_all(
-            offset=offset,
-            limit=limit,
-            **filters.model_dump(exclude_none=True)
-        )
-        return res
-    except Exception:
-        await session.rollback()
-        raise
+    res = await car_service.get_all(
+        offset=offset,
+        limit=limit,
+        **filters.model_dump(exclude_none=True)
+    )
+    return res
 
 
 @router.patch("/{car_id}", description="Update car by id")
@@ -79,9 +72,6 @@ async def update_car(
         return res
     except ValueError:
         raise NotFoundExc("Car not found")
-    except Exception:
-        await session.rollback()
-        raise
 
 
 @router.delete("/{car_id}", description="Delete car by id")
