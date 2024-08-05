@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - TAG=${TAG:-latest}
+    container_name: fastapi_container
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src/logs:/app/src/logs
+    env_file:
+      - .env-non-dev
+    command: [ "sh", "/app/docker/app.sh" ]
+
+  postgres:
+    image: postgres:16
+    container_name: postgres_container
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 3s
+      retries: 5
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env-non-dev
+volumes:
+  postgres_volume:

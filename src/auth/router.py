@@ -29,7 +29,7 @@ async def register(
         raise HTTPException(status_code=409, detail="User already exists")
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise
 
 
 @router.post("/login")

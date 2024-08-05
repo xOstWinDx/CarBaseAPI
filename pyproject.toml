@@ -10,14 +10,16 @@ python = "^3.12"
 fastapi = {extras = ["all"], version = "^0.112.0"}
 pydantic-settings = "^2.4.0"
 SQLAlchemy = "^2.0.31"
-pytest = "^8.3.2"
-pytest-asyncio = "^0.23.8"
 asyncpg = "^0.29.0"
 alembic = "^1.13.2"
 bcrypt = "^4.2.0"
 PyJWT = "^2.9.0"
 gunicorn = "^22.0.0"
 
+[tool.poetry.dev-dependencies]
+pytest = "^8.3.2"
+pytest-asyncio = "^0.23.8"
+black = "^24.8.0"
 
 [build-system]
 requires = ["poetry-core"]
