@@ -11,7 +11,7 @@ from src.auth.service import AuthService
 router = APIRouter(prefix="/auth")
 
 
-@router.post("/register", status_code=201)
+@router.post("/register", status_code=201, description="Create new user")
 async def register(
         user_data: UserCreateSchema,
         session: AsyncSession = Depends(get_async_session)
@@ -32,7 +32,7 @@ async def register(
         raise
 
 
-@router.post("/login")
+@router.post("/login", description="Login user")
 async def login(
         response: Response,
         token: str = Depends(authentication)
@@ -40,6 +40,6 @@ async def login(
     response.set_cookie("token", token)
 
 
-@router.post("/logout")
+@router.post("/logout", description="Logout user")
 async def logout(response: Response):
     response.delete_cookie("token")

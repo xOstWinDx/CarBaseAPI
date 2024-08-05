@@ -11,12 +11,12 @@ from src.exceptions import NotFoundExc
 router = APIRouter(prefix="/cars")
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, description="Create new car")
 async def add_car(
         car_data: CarCreateSchema,
         session: AsyncSession = Depends(get_async_session),
         _=Depends(authorization_user)
-):
+) -> int:
     car_service = CarService(CarPostgresRepository(session))
     try:
         res = await car_service.create(**car_data.model_dump())
@@ -27,7 +27,7 @@ async def add_car(
         raise
 
 
-@router.get("/{car_id}", response_model=CarGetSchema)
+@router.get("/{car_id}", response_model=CarGetSchema, description="Get car by id")
 async def get_car_by_id(
         car_id: int,
         session: AsyncSession = Depends(get_async_session),
@@ -44,7 +44,7 @@ async def get_car_by_id(
         raise
 
 
-@router.get("/", response_model=list[CarGetSchema])
+@router.get("/", response_model=list[CarGetSchema], description="Get all cars")
 async def get_all_cars(
         filters: FilterSchema = Depends(),
         session: AsyncSession = Depends(get_async_session),
@@ -65,7 +65,7 @@ async def get_all_cars(
         raise
 
 
-@router.patch("/{car_id}")
+@router.patch("/{car_id}", description="Update car by id")
 async def update_car(
         car_id: int,
         car_data: CarUpdateSchema,
@@ -84,7 +84,7 @@ async def update_car(
         raise
 
 
-@router.delete("/{car_id}")
+@router.delete("/{car_id}", description="Delete car by id")
 async def delete_car(
         car_id: int,
         session: AsyncSession = Depends(get_async_session),
