@@ -4,7 +4,7 @@ from src.database import BaseModel, str16
 
 
 class Car(BaseModel):
-    __tablename__ = "car"
+    __tablename__ = "cars"
 
     brand: Mapped[str16] = mapped_column(index=True)
     model: Mapped[str16]

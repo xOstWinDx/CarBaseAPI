@@ -5,7 +5,7 @@ from src.database import BaseModel, str32, str16
 
 
 class User(BaseModel):
-    __tablename__ = "user"
+    __tablename__ = "users"
 
     hashed_password: Mapped[bytes | None]
     email: Mapped[str32 | None] = mapped_column(index=True, unique=True)
