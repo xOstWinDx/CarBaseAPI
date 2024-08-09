@@ -1,17 +1,18 @@
 import logging
 
-from src.abstract.repository import AbstractAuthRepository
+from src.auth.unit_of_work import AbstractUnitOfWork
 from src.auth.utils import hash_password
 
 logger = logging.getLogger("auth.service")
 
 
 class AuthService:
-    def __init__(self, repository: AbstractAuthRepository):
-        self.repository = repository
+    def __init__(self, uow: AbstractUnitOfWork):
+        self.uow = uow
 
     async def get_one_or_none(self, **filter_by):
-        return await self.repository.get_one_or_none(**filter_by)
+        async with self.uow as uow:
+            return await uow.users.get_one_or_none(**filter_by)
 
     async def register_by_email(
             self,
@@ -34,12 +35,13 @@ class AuthService:
         if password is not None:
             password = hash_password(password)
         try:
-            await self.repository.create_by_data(
-                email=email,
-                name=name,
-                hashed_password=password,
-                is_admin=is_admin
-            )
+            async with self.uow as uow:
+                await uow.users.create_by_data(
+                    email=email,
+                    name=name,
+                    hashed_password=password,
+                    is_admin=is_admin
+                )
         except Exception as e:
             logger.exception("Exception while adding user: %s", e)
             raise
@@ -47,7 +49,8 @@ class AuthService:
     async def is_exists(self, **filter_by) -> bool:
         logger.debug("Check if user exists: %s", filter_by)
         try:
-            return await self.repository.is_exists(**filter_by)
+            async with self.uow as uow:
+                return await uow.users.is_exists(**filter_by)
         except Exception as e:
             logger.exception("Exception while checking if user exists: %s", e)
             raise

@@ -1,6 +1,6 @@
 import datetime
 
-from pydantic import ConfigDict, BaseModel, EmailStr, Field
+from pydantic import ConfigDict, BaseModel
 
 
 class BaseSchema(BaseModel):
@@ -10,6 +10,4 @@ class BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserBase(BaseModel):
-    email: EmailStr | None
-    name: str = Field(max_length=32, min_length=3)
+

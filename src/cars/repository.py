@@ -1,24 +1,55 @@
-from typing import Sequence
+from abc import ABC, abstractmethod
+from typing import Sequence, Generic, TypeVar
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, insert
 
-from src.abstract import AbstractCarRepository
 from src.cars.model import Car
-from src.mixins import PostgresCreateMixin, PostgresReadMixin
+
+T = TypeVar("T")
 
 
-class CarPostgresRepository(
-    AbstractCarRepository[Car],
-    PostgresCreateMixin[Car],
-    PostgresReadMixin[Car],
-):
+class AbstractRepository(Generic[T], ABC):
+    @abstractmethod
+    async def create_by_data(self, **car_data) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_by_id(self, car_id: int) -> T:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_all(self, offset: int, limit: int, **filter_by) -> Sequence[T]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_by_id(self, car_id: int, **new_data) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_by_id(self, car_id: int) -> int:
+        raise NotImplementedError
+
+
+class SqlAlchemyRepository(AbstractRepository[Car]):
+
+    async def create_by_data(self, **car_data) -> int:
+        stmt = (
+            insert(Car).
+            values(**car_data).
+            returning(Car.id)
+        )
+        res = await self.session.execute(stmt)
+        return res.scalar()
+
+    async def get_by_id(self, car_id: int) -> T:
+        return await self.session.get(Car, car_id)
 
     def __init__(self, session):
-        super().__init__(session=session, model=Car)
+        self.session = session
 
     async def get_all(self, offset: int, limit: int, **filter_by) -> Sequence[Car]:
         query = (
-            select(self.model).
+            select(Car).
             offset(offset).
             limit(limit)
         )
@@ -26,34 +57,34 @@ class CarPostgresRepository(
 
         for key, value in filter_by.items():
             if key == "max_mileage":
-                filters.append(self.model.mileage <= value)
+                filters.append(Car <= value)
             elif key == "min_mileage":
-                filters.append(self.model.mileage >= value)
+                filters.append(Car >= value)
             elif key == "max_price":
-                filters.append(self.model.price <= value)
+                filters.append(Car <= value)
             elif key == "min_price":
-                filters.append(self.model.price >= value)
+                filters.append(Car >= value)
             else:
-                filters.append(getattr(self.model, key) == value)
+                filters.append(getattr(Car, key) == value)
 
         if filters:
             query = query.where(*filters)
         res = await self.session.scalars(query)
         return res.all()
 
-    async def update_by_id(self, entity_id: int, **new_data) -> int:
+    async def update_by_id(self, car_id: int, **new_data) -> int:
         stmt = (
-            update(self.model).
-            filter_by(id=entity_id).
+            update(Car).
+            filter_by(id=car_id).
             values(**new_data)
         )
         result = await self.session.execute(stmt)
         return result.rowcount  # type: ignore
 
-    async def delete_by_id(self, entity_id: int) -> int:
+    async def delete_by_id(self, car_id: int) -> int:
         stmt = (
-            delete(self.model).
-            where(self.model.id == entity_id)
+            delete(Car).
+            where(Car.id == car_id)
         )
         result = await self.session.execute(stmt)
         return result.rowcount  # type: ignore

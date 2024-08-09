@@ -15,11 +15,11 @@ if CONFIG.MODE == "TEST":
 else:
     engine = create_async_engine(url=CONFIG.database_url, echo=False)
 
-session_factory = async_sessionmaker(bind=engine, expire_on_commit=False)
+DEFAULT_SESSION_FACTORY = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with session_factory() as session:
+    async with DEFAULT_SESSION_FACTORY() as session:
         yield session
 
 
@@ -44,3 +44,6 @@ class BaseModel(DeclarativeBase):
     }
     id: Mapped[id_]
     created_at: Mapped[created_at]
+
+
+

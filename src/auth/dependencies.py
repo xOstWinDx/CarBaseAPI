@@ -2,26 +2,21 @@ import jwt
 from fastapi import Depends
 from jwt import PyJWTError
 from pydantic import ValidationError
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
 from src.auth.config import AUTH_CONFIG
-from src.auth.repository import AuthPostgresRepository
 from src.auth.service import AuthService
+from src.auth.unit_of_work import SqlAlchemyUnitOfWork
 from src.auth.utils import encode_jwt
 
 from src.auth.exceptions import InvalidCredentialsAuthExc, UnknownUserAuthExc, InvalidTokenAuthExc
 from src.exceptions import ForbiddenAuthExc
 from src.auth.schemas import UserAuthSchema, JwtPayloadSchema
-from src.database import get_async_session
-from src.models import User
+from src.auth.models import User
 
 
-async def authentication(
-        user_auth: UserAuthSchema,
-        session: AsyncSession = Depends(get_async_session)
-) -> str:
-    auth_service = AuthService(AuthPostgresRepository(session=session))
+async def authentication(user_auth: UserAuthSchema) -> str:
+    auth_service = AuthService(uow=SqlAlchemyUnitOfWork())
     user = await auth_service.get_one_or_none(email=user_auth.email)
     if not user or not user.check_password(user_auth.password):
         raise InvalidCredentialsAuthExc
@@ -42,11 +37,8 @@ def decode_jwt(request: Request) -> JwtPayloadSchema:
 
 
 def authorization(is_admin: bool = False):
-    async def inner(
-            payload: JwtPayloadSchema = Depends(decode_jwt),
-            session: AsyncSession = Depends(get_async_session)
-    ) -> User:
-        auth_service = AuthService(AuthPostgresRepository(session=session))
+    async def inner(payload: JwtPayloadSchema = Depends(decode_jwt)) -> User:
+        auth_service = AuthService(uow=SqlAlchemyUnitOfWork())
         user = await auth_service.get_one_or_none(id=payload.id)
         if not user:
             raise UnknownUserAuthExc

@@ -9,8 +9,8 @@ from src.auth.schemas import JwtPayloadSchema
 from src.cars.enums import FuelType, TransmissionType
 from src.cars.model import Car
 from src.config import CONFIG
-from src.models import User
-from src.database import session_factory, engine, BaseModel
+from src.auth.models import User
+from src.database import DEFAULT_SESSION_FACTORY, engine, BaseModel
 from src.main import app
 
 
@@ -22,7 +22,7 @@ async def prepare_database() -> None:
         await conn.run_sync(BaseModel.metadata.drop_all)
         await conn.run_sync(BaseModel.metadata.create_all)
 
-    async with session_factory() as session:
+    async with DEFAULT_SESSION_FACTORY() as session:
         admin_user = User(
             email="admin@admin.com",
             name="Admin",
@@ -65,7 +65,7 @@ async def prepare_database() -> None:
 
 @pytest.fixture(scope="session")
 async def get_test_session() -> AsyncGenerator[AsyncSession, None]:
-    async with session_factory() as session:
+    async with DEFAULT_SESSION_FACTORY() as session:
         yield session
 
 
@@ -73,7 +73,7 @@ async def get_test_session() -> AsyncGenerator[AsyncSession, None]:
 async def unauthorized_client() -> AsyncClient:
     async with AsyncClient(
             transport=ASGITransport(app=app),
-            base_url="http://test"
+            base_url="http://test/api"
     ) as client:
         yield client
 
@@ -82,7 +82,7 @@ async def unauthorized_client() -> AsyncClient:
 async def admin_client(unauthorized_client: AsyncClient) -> AsyncClient:
     async with AsyncClient(
             transport=ASGITransport(app=app),
-            base_url="http://test"
+            base_url="http://test/api"
     ) as client:
         client.cookies.set("token", encode_jwt(payload=JwtPayloadSchema(id=1, name="Admin")))
         yield client
@@ -92,7 +92,7 @@ async def admin_client(unauthorized_client: AsyncClient) -> AsyncClient:
 async def authorized_client(unauthorized_client: AsyncClient) -> AsyncClient:
     async with AsyncClient(
             transport=ASGITransport(app=app),
-            base_url="http://test"
+            base_url="http://test/api"
     ) as client:
         client.cookies.set("token", encode_jwt(payload=JwtPayloadSchema(id=2, name="Base")))
         yield client
