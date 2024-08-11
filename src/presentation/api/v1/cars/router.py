@@ -6,7 +6,7 @@ from src.presentation.api.v1.dependencies import authorization_user, authorizati
 from src.presentation.api.v1.cars.schemas import CarCreateSchema, FilterSchema, CarGetSchema, CarUpdateSchema
 from src.presentation.api.v1.exceptions import NotFoundExc
 
-router = APIRouter(prefix="/cars")
+router = APIRouter(prefix="/cars", tags=["cars"])
 
 
 @router.post("/", status_code=201, description="Create new car")

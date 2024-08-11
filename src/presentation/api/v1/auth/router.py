@@ -6,7 +6,7 @@ from src.presentation.api.v1.auth.dependencies import authentication
 from src.presentation.api.v1.auth.schemas import UserCreateSchema
 from src.domain.users.service import UserService
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", status_code=201, description="Create new user")
