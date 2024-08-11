@@ -1,29 +1,11 @@
-from abc import ABC, abstractmethod
-from typing import TypeVar, Generic
-
-from sqlalchemy import select, insert, exists
+from sqlalchemy import insert, select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.models import User
-
-T = TypeVar("T")
-
-
-class AbstractRepository(Generic[T], ABC):
-    @abstractmethod
-    async def create_by_data(self, **user_data) -> int:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_one_or_none(self, **filter_by) -> T | None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def is_exists(self, **filter_by) -> bool:
-        raise NotImplementedError
+from src.domain.users.entities import User
+from src.domain.users.repository import AbstractUserRepository
 
 
-class SqlAlchemyRepository(AbstractRepository[User]):
+class SqlAlchemyUserRepository(AbstractUserRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 

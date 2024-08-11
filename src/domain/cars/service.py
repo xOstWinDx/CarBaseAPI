@@ -1,15 +1,14 @@
 import logging
 
-from src.cars.enums import FuelType, TransmissionType
-from src.cars.schemas import CarGetSchema
-from src.cars.unit_of_work import AbstractUnitOfWork
+from src.domain.cars.entities import FuelType, TransmissionType, Car
+from src.domain.cars.interfaces import AbstractCarUnitOfWork
 
-logger = logging.getLogger("cars.service")
+logger = logging.getLogger("domain.cars.service")
 
 
 class CarService:
 
-    def __init__(self, uow: AbstractUnitOfWork):
+    def __init__(self, uow: AbstractCarUnitOfWork):
         self.uow = uow
 
     async def create(
@@ -35,7 +34,7 @@ class CarService:
         )
         try:
             async with self.uow as uow:
-                return await uow.cars.create_by_data(
+                res = await uow.cars.create_by_data(
                     brand=brand,
                     model=model,
                     year=year,
@@ -44,21 +43,23 @@ class CarService:
                     mileage=mileage,
                     price=price
                 )
+                await uow.commit()
+                return res
         except Exception as e:
             logger.exception("Exception while creating car: %s", e)
             raise
 
-    async def get_all(self, offset: int, limit: int, **filter_by) -> list[CarGetSchema]:
+    async def get_all(self, offset: int, limit: int, **filter_by) -> list[Car]:
         logger.debug("Get all cars: %s", filter_by)
         try:
             async with self.uow as uow:
-                return [
-                    CarGetSchema.model_validate(car) for car in await uow.cars.get_all(
-                        offset=offset,
-                        limit=limit,
-                        **filter_by
-                    )
-                ]
+                res = await uow.cars.get_all(
+                    offset=offset,
+                    limit=limit,
+                    **filter_by
+                )
+                await uow.commit()
+                return res
         except Exception as e:
             logger.exception("Exception while getting all cars: %s", e)
             raise
@@ -67,7 +68,9 @@ class CarService:
         logger.debug("Get car by id: %s", id)
         try:
             async with self.uow as uow:
-                return await uow.cars.get_by_id(car_id=car_id)
+                res = await uow.cars.get_by_id(car_id=car_id)
+                await uow.commit()
+                return res
         except Exception as e:
             logger.exception("Exception while getting car by id: %s", e)
             raise
@@ -77,6 +80,7 @@ class CarService:
         try:
             async with self.uow as uow:
                 row_count = await uow.cars.update_by_id(car_id=car_id, **new_data)
+                await uow.commit()
             if row_count == 0:
                 raise ValueError("Car not found")
         except Exception as e:
@@ -88,6 +92,7 @@ class CarService:
         try:
             async with self.uow as uow:
                 row_count = await uow.cars.delete_by_id(car_id=car_id)
+                await uow.commit()
             if row_count == 0:
                 raise ValueError("Car not found")
         except Exception as e:

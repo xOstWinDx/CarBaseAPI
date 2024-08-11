@@ -20,6 +20,8 @@ class Config(BaseSettings):
 
     MODE: Literal["TEST", "PROD"] = "PROD"
 
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+
     @property
     def database_url(self) -> str:
         return (f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"

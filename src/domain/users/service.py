@@ -1,18 +1,21 @@
 import logging
 
-from src.auth.unit_of_work import AbstractUnitOfWork
-from src.auth.utils import hash_password
+import bcrypt
 
-logger = logging.getLogger("auth.service")
+from src.domain.users.interfaces import AbstractUserUnitOfWork
+
+logger = logging.getLogger("domain.users.service")
 
 
-class AuthService:
-    def __init__(self, uow: AbstractUnitOfWork):
+class UserService:
+    def __init__(self, uow: AbstractUserUnitOfWork):
         self.uow = uow
 
     async def get_one_or_none(self, **filter_by):
         async with self.uow as uow:
-            return await uow.users.get_one_or_none(**filter_by)
+            user = await uow.users.get_one_or_none(**filter_by)
+            await uow.commit()
+        return user
 
     async def register_by_email(
             self,
@@ -33,7 +36,7 @@ class AuthService:
     ) -> None:
         logger.debug("Add user: %s", id)
         if password is not None:
-            password = hash_password(password)
+            password = self._hash_password(password)
         try:
             async with self.uow as uow:
                 await uow.users.create_by_data(
@@ -42,15 +45,24 @@ class AuthService:
                     hashed_password=password,
                     is_admin=is_admin
                 )
+                await uow.commit()
         except Exception as e:
             logger.exception("Exception while adding user: %s", e)
             raise
+
+    @staticmethod
+    def _hash_password(password: str) -> bytes:
+        salt = bcrypt.gensalt()
+        pwd_bytes = password.encode()
+        return bcrypt.hashpw(pwd_bytes, salt)
 
     async def is_exists(self, **filter_by) -> bool:
         logger.debug("Check if user exists: %s", filter_by)
         try:
             async with self.uow as uow:
-                return await uow.users.is_exists(**filter_by)
+                res = await uow.users.is_exists(**filter_by)
+                await uow.commit()
+                return res
         except Exception as e:
             logger.exception("Exception while checking if user exists: %s", e)
             raise

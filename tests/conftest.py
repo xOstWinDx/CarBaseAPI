@@ -4,13 +4,15 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.utils import encode_jwt
-from src.auth.schemas import JwtPayloadSchema
-from src.cars.enums import FuelType, TransmissionType
-from src.cars.model import Car
+from src.domain.cars.entities import FuelType, TransmissionType
+from src.domain.cars.entities import Car
 from src.config import CONFIG
-from src.auth.models import User
+from src.domain.users.entities import User
 from src.database import DEFAULT_SESSION_FACTORY, engine, BaseModel
+
+from src.presentation.api.v1.auth.dependencies import encode_jwt
+from src.presentation.api.v1.auth.schemas import JwtPayloadSchema
+
 from src.main import app
 
 
@@ -73,7 +75,7 @@ async def get_test_session() -> AsyncGenerator[AsyncSession, None]:
 async def unauthorized_client() -> AsyncClient:
     async with AsyncClient(
             transport=ASGITransport(app=app),
-            base_url="http://test/api"
+            base_url="http://test/api/v1"
     ) as client:
         yield client
 
@@ -82,7 +84,7 @@ async def unauthorized_client() -> AsyncClient:
 async def admin_client(unauthorized_client: AsyncClient) -> AsyncClient:
     async with AsyncClient(
             transport=ASGITransport(app=app),
-            base_url="http://test/api"
+            base_url="http://test/api/v1"
     ) as client:
         client.cookies.set("token", encode_jwt(payload=JwtPayloadSchema(id=1, name="Admin")))
         yield client
@@ -92,7 +94,7 @@ async def admin_client(unauthorized_client: AsyncClient) -> AsyncClient:
 async def authorized_client(unauthorized_client: AsyncClient) -> AsyncClient:
     async with AsyncClient(
             transport=ASGITransport(app=app),
-            base_url="http://test/api"
+            base_url="http://test/api/v1"
     ) as client:
         client.cookies.set("token", encode_jwt(payload=JwtPayloadSchema(id=2, name="Base")))
         yield client

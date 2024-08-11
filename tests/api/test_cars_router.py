@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 
-from src.cars.enums import FuelType, TransmissionType
+from src.domain.cars.entities import FuelType, TransmissionType
 
 
 @pytest.mark.parametrize(

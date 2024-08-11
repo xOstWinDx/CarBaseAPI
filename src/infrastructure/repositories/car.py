@@ -1,36 +1,12 @@
-from abc import ABC, abstractmethod
-from typing import Sequence, Generic, TypeVar
+from typing import Sequence
 
-from sqlalchemy import select, update, delete, insert
+from sqlalchemy import insert, select, update, delete
 
-from src.cars.model import Car
-
-T = TypeVar("T")
+from src.domain.cars.entities import Car
+from src.domain.cars.repository import AbstractCarRepository
 
 
-class AbstractRepository(Generic[T], ABC):
-    @abstractmethod
-    async def create_by_data(self, **car_data) -> int:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_by_id(self, car_id: int) -> T:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_all(self, offset: int, limit: int, **filter_by) -> Sequence[T]:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def update_by_id(self, car_id: int, **new_data) -> int:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def delete_by_id(self, car_id: int) -> int:
-        raise NotImplementedError
-
-
-class SqlAlchemyRepository(AbstractRepository[Car]):
+class SqlAlchemyCarRepository(AbstractCarRepository):
 
     async def create_by_data(self, **car_data) -> int:
         stmt = (
@@ -41,7 +17,7 @@ class SqlAlchemyRepository(AbstractRepository[Car]):
         res = await self.session.execute(stmt)
         return res.scalar()
 
-    async def get_by_id(self, car_id: int) -> T:
+    async def get_by_id(self, car_id: int) -> Car:
         return await self.session.get(Car, car_id)
 
     def __init__(self, session):

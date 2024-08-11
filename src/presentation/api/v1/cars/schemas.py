@@ -1,7 +1,7 @@
 from fastapi import Query, HTTPException
 from pydantic import BaseModel, Field
 
-from src.cars.enums import FuelType, TransmissionType
+from src.domain.cars.entities import FuelType, TransmissionType
 from src.schemas import BaseSchema
 
 

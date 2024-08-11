@@ -4,23 +4,13 @@ from jwt import PyJWTError
 from pydantic import ValidationError
 from starlette.requests import Request
 
-from src.auth.config import AUTH_CONFIG
-from src.auth.service import AuthService
-from src.auth.unit_of_work import SqlAlchemyUnitOfWork
-from src.auth.utils import encode_jwt
-
-from src.auth.exceptions import InvalidCredentialsAuthExc, UnknownUserAuthExc, InvalidTokenAuthExc
-from src.exceptions import ForbiddenAuthExc
-from src.auth.schemas import UserAuthSchema, JwtPayloadSchema
-from src.auth.models import User
-
-
-async def authentication(user_auth: UserAuthSchema) -> str:
-    auth_service = AuthService(uow=SqlAlchemyUnitOfWork())
-    user = await auth_service.get_one_or_none(email=user_auth.email)
-    if not user or not user.check_password(user_auth.password):
-        raise InvalidCredentialsAuthExc
-    return encode_jwt(payload=JwtPayloadSchema(id=user.id, name=user.name))
+from src.domain.users import User
+from src.domain.users.service import UserService
+from src.infrastructure.uow.user import SqlAlchemyUserUnitOfWork
+from src.presentation.api.v1.auth.config import AUTH_CONFIG
+from src.presentation.api.v1.auth.exceptions import UnknownUserAuthExc, InvalidTokenAuthExc
+from src.presentation.api.v1.auth.schemas import JwtPayloadSchema
+from src.presentation.api.v1.exceptions import ForbiddenAuthExc
 
 
 def decode_jwt(request: Request) -> JwtPayloadSchema:
@@ -38,8 +28,8 @@ def decode_jwt(request: Request) -> JwtPayloadSchema:
 
 def authorization(is_admin: bool = False):
     async def inner(payload: JwtPayloadSchema = Depends(decode_jwt)) -> User:
-        auth_service = AuthService(uow=SqlAlchemyUnitOfWork())
-        user = await auth_service.get_one_or_none(id=payload.id)
+        user_service = UserService(uow=SqlAlchemyUserUnitOfWork())
+        user = await user_service.get_one_or_none(id=payload.id)
         if not user:
             raise UnknownUserAuthExc
         if is_admin and not user.is_admin:
